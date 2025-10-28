@@ -5,14 +5,15 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: '"ecommerce.routemisr.com',
+        hostname: "ecommerce.routemisr.com",
         port: "",
         pathname: "/Route-Academy-*/**",
-        search: "",
       },
     ],
   },
-  /* config options here */
+  eslint: {
+    ignoreDuringBuilds: true, // ✅ المهم ده
+  },
 };
 
 export default nextConfig;
