@@ -1,25 +1,24 @@
 import { UserResponse } from "@/interfaces";
-import { User } from "next-auth";
+import { User as NextAuthUser } from "next-auth";
 
 declare module "next-auth" {
-  /**
-   * Returned by `useSession`, `getSession` and received as a prop on the `SessionProvider` React Context
-   */
   interface Session {
-    user: UserResponse;
+    user: UserResponse & {
+      token?: string;
+    };
   }
 
-  interface User {
+  interface User extends NextAuthUser {
+    token?: string;
     user: UserResponse;
-    token: string;
   }
 }
 
-import { JWT } from "next-auth/jwt";
+import { JWT as DefaultJWT } from "next-auth/jwt";
 
 declare module "next-auth/jwt" {
-  /**
-   * Returned by the `jwt` callback and `getToken`, when using JWT sessions
-   */
-  interface JWT extends User {}
+  interface JWT extends DefaultJWT {
+    token?: string;
+    user?: UserResponse;
+  }
 }
