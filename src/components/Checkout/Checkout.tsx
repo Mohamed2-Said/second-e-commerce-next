@@ -17,8 +17,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import toast from "react-hot-toast";
+import { getSession } from "next-auth/react"; // 👈 استيراد مهم لجلب التوكن المحدث
 
-// ✅ تعريف الفاليديشن
 const formSchema = z.object({
   details: z
     .string()
@@ -41,8 +41,22 @@ export default function CheckoutMohamed({ cartId }: { cartId: string }) {
     resolver: zodResolver(formSchema),
   });
 
-  // ✅ دالة الدفع
   async function Checkout(data: FormData) {
+    // 🔍 جلب الجلسة المحدثة مباشرة من السيرفر لضمان الحصول على توكن صالح
+    const session = await getSession();
+
+    const userToken =
+      (session as any)?.token || (session?.user as any)?.token || "";
+
+    console.log("🔑 Token used for checkout:", userToken);
+
+    if (!userToken) {
+      toast.error("Session expired or token missing. Please login again.", {
+        id: "checkout",
+      });
+      return;
+    }
+
     try {
       toast.loading("Processing your order...", { id: "checkout" });
 
@@ -54,17 +68,16 @@ export default function CheckoutMohamed({ cartId }: { cartId: string }) {
 
       const response = await fetch(
         `https://ecommerce.routemisr.com/api/v1/orders/checkout-session/${cartId}?url=${encodeURIComponent(
-          "http://localhost:3000"
+          "http://localhost:3000",
         )}`,
         {
           method: "POST",
           body: JSON.stringify({ shippingAddress }),
           headers: {
-            token:
-              "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4YzljODQ4MDM3YjQ5Nzk0NjlhNzdiNyIsIm5hbWUiOiJBaG1lZCBBYmQgQWwtTXV0aSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzU4MDU0NDczLCJleHAiOjE3NjU4MzA0NzN9.2ILR_jN6bn3tIrwrIS7IEcjs5Yd44G8MPksDrz6Oqas",
+            token: userToken, // 👈 استخدام التوكن المضمون
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       const result = await response.json();
@@ -79,7 +92,7 @@ export default function CheckoutMohamed({ cartId }: { cartId: string }) {
 
       if (paymentUrl) {
         toast.success("Redirecting to payment...", { id: "checkout" });
-        window.location.href = paymentUrl; // ✅ تحويل فعلي
+        window.location.href = paymentUrl;
       } else {
         toast.success("Order created successfully ✅", { id: "checkout" });
       }
@@ -96,7 +109,7 @@ export default function CheckoutMohamed({ cartId }: { cartId: string }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="w-full py-6 rounded-xl bg-gray-900 text-white font-medium shadow-lg">
+        <Button className="w-full py-6 rounded-xl bg-gray-900 text-white font-medium shadow-lg cursor-pointer">
           Proceed to Checkout
         </Button>
       </DialogTrigger>
@@ -136,7 +149,9 @@ export default function CheckoutMohamed({ cartId }: { cartId: string }) {
 
           <DialogFooter className="pt-4">
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button type="button" variant="outline">
+                Cancel
+              </Button>
             </DialogClose>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Processing..." : "Save & Checkout"}

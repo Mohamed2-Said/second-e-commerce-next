@@ -24,7 +24,7 @@ const handler = NextAuth({
               email: credentials?.email,
               password: credentials?.password,
             }),
-          }
+          },
         );
 
         const payload: SuccessLoginResponse | FailedLoginResponse =
@@ -44,15 +44,14 @@ const handler = NextAuth({
   callbacks: {
     jwt: ({ token, user }) => {
       if (user) {
-        token.user = user.user;
-        token.token = user.token;
+        token.user = (user as any).user;
+        token.token = (user as any).token;
       }
-
       return token;
     },
     session: ({ session, token }) => {
-      session.user = token.user;
-
+      (session as any).user = token.user;
+      (session as any).token = token.token; // نقل التوكن للـ session بنجاح
       return session;
     },
   },

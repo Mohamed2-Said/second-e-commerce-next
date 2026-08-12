@@ -13,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ShoppingCartIcon, UserIcon, Menu, Loader2 } from "lucide-react";
+import { ShoppingCartIcon, UserIcon, Menu, Loader2, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Cartcontext } from "../context/context";
 import { signOut, useSession } from "next-auth/react";
@@ -21,7 +21,6 @@ import { signOut, useSession } from "next-auth/react";
 export default function Navber() {
   const { CartData, isLoading } = useContext(Cartcontext);
   const session = useSession();
-  console.log(session);
 
   return (
     <nav className="bg-gray-300 py-4 text-2xl font-semibold sticky top-0 z-50">
@@ -54,7 +53,28 @@ export default function Navber() {
           </div>
 
           {/* Icons + User + Mobile Menu */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
+            {/* ❤️ أيقونة المفضلة (تظهر فقط لو المستخدم مسجل دخول) */}
+            {session.status == "authenticated" && (
+              <Link href={"/wishlist"} className="relative w-fit">
+                <Heart className="w-6 h-6 hover:text-red-500 transition" />
+              </Link>
+            )}
+
+            {/* Cart */}
+            {session.status == "authenticated" && (
+              <Link href={"/cart"} className="relative w-fit">
+                <ShoppingCartIcon className="w-6 h-6" />
+                <span className="absolute -top-2.5 -right-2.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-mono text-white">
+                  {isLoading ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    CartData?.numOfCartItems
+                  )}
+                </span>
+              </Link>
+            )}
+
             {/* Dropdown User */}
             <DropdownMenu>
               <DropdownMenuTrigger className="outline-0">
@@ -65,7 +85,7 @@ export default function Navber() {
                   <>
                     <Link href="/profile">
                       <DropdownMenuItem>Profile</DropdownMenuItem>
-                    </Link>{" "}
+                    </Link>
                     <DropdownMenuItem
                       onClick={() =>
                         signOut({
@@ -88,20 +108,6 @@ export default function Navber() {
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-
-            {/* Cart */}
-            {session.status == "authenticated" && (
-              <Link href={"/cart"} className="relative w-fit">
-                <ShoppingCartIcon className="w-6 h-6" />
-                <span className="absolute -top-2.5 -right-2.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-mono text-white">
-                  {isLoading ? (
-                    <Loader2 className="animate-spin" />
-                  ) : (
-                    CartData?.numOfCartItems
-                  )}
-                </span>
-              </Link>
-            )}
 
             {/* Mobile Menu (Dropdown) */}
             <div className="md:hidden">

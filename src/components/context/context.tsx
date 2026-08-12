@@ -1,6 +1,7 @@
 "use client";
 import { CartResponse } from "@/Inerface/cart";
 import { createContext, ReactNode, useEffect, useState } from "react";
+import { useSession } from "next-auth/react"; // 👈 استيراد جلسة نكست أث
 
 export const Cartcontext = createContext<{
   CartData: CartResponse | null;
@@ -24,22 +25,47 @@ export default function Cartcontextprovider({
   const [CartData, setCartData] = useState<CartResponse | null>(null);
   const [isLoading, setLoading] = useState<boolean>(true);
 
+  // بنجيب الـ data والـ status بتوع المستخدم المسجل دخول حالياً
+  const { data: session, status } = useSession();
+
   async function Getcart() {
-    const respons = await fetch("https://ecommerce.routemisr.com/api/v1/cart", {
-      method: "get",
-      headers: {
-        token:
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4YzljODQ4MDM3YjQ5Nzk0NjlhNzdiNyIsIm5hbWUiOiJBaG1lZCBBYmQgQWwtTXV0aSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzU4MDU0NDczLCJleHAiOjE3NjU4MzA0NzN9.2ILR_jN6bn3tIrwrIS7IEcjs5Yd44G8MPksDrz6Oqas",
-      },
-    });
-    const data: CartResponse = await respons.json();
-    setCartData(data);
-    setLoading(false);
-    console.log(data);
+    // لو لسه الـ session بتتحمل، استنى
+    if (status === "loading") return;
+
+    // لو المستخدم مش مسجل دخول، وقف الـ loading ونظف البيانات
+    if (!session || !(session as any).token) {
+      setLoading(false);
+      return;
+    }
+
+    // بنسحب التوكن المخزن جوه الـ session اللي راجعة من NextAuth
+    const userToken = (session as any).token || "";
+
+    try {
+      const respons = await fetch(
+        "https://ecommerce.routemisr.com/api/v1/cart",
+        {
+          method: "get",
+          headers: {
+            token: userToken,
+          },
+        },
+      );
+      const data: CartResponse = await respons.json();
+      setCartData(data);
+    } catch (error) {
+      console.error("Failed to fetch cart", error);
+    } finally {
+      setLoading(false);
+    }
   }
+
+  // أول ما الـ session تتغير أو تتوفر، نادِ على Getcart
   useEffect(() => {
-    Getcart();
-  }, []);
+    if (status !== "loading") {
+      Getcart();
+    }
+  }, [status, session]);
 
   return (
     <Cartcontext.Provider

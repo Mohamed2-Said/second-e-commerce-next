@@ -11,12 +11,20 @@ import toast from "react-hot-toast";
 import { Loader2, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import Checkoutmohamed from "@/components/Checkout/Checkout";
+import { useSession } from "next-auth/react";
 
 export default function CartPage() {
   const { CartData, isLoading, setCartData } = useContext(Cartcontext);
   const [removeId, setremoveId] = useState<string | null>(null);
   const [updateId, setupdateId] = useState<string | null>(null);
   const [clearLoading, setClearLoading] = useState(false);
+
+  const { data: session } = useSession(); // 👈 جبنا الجلسة عشان نسحب منها التوكن الديناميكي
+
+  // دالة مساعدة لجلب التوكن بمرونة
+  const getToken = () => {
+    return (session as any)?.token || (session?.user as any)?.token || "";
+  };
 
   // 🧩 حذف منتج
   async function RemoveCartItem(ProductId: string) {
@@ -27,8 +35,7 @@ export default function CartPage() {
         {
           method: "DELETE",
           headers: {
-            token:
-              "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4YzljODQ4MDM3YjQ5Nzk0NjlhNzdiNyIsIm5hbWUiOiJBaG1lZCBBYmQgQWwtTXV0aSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzU4MDU0NDczLCJleHAiOjE3NjU4MzA0NzN9.2ILR_jN6bn3tIrwrIS7IEcjs5Yd44G8MPksDrz6Oqas",
+            token: getToken(), // 👈 استخدام التوكن الديناميكي
           },
         }
       );
@@ -37,6 +44,8 @@ export default function CartPage() {
       if (data.status === "success") {
         toast.success("Product removed successfully");
         setCartData(data);
+      } else {
+        toast.error("Failed to remove product");
       }
     } catch (error) {
       toast.error("Failed to remove product");
@@ -44,7 +53,7 @@ export default function CartPage() {
     setremoveId(null);
   }
 
-  //  تحديث عدد المنتج
+  // 🔄 تحديث عدد المنتج
   async function UpdateCartItem(ProductId: string, count: number) {
     if (count === 0) {
       return RemoveCartItem(ProductId);
@@ -57,8 +66,7 @@ export default function CartPage() {
         {
           method: "PUT",
           headers: {
-            token:
-              "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4YzljODQ4MDM3YjQ5Nzk0NjlhNzdiNyIsIm5hbWUiOiJBaG1lZCBBYmQgQWwtTXV0aSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzU4MDU0NDczLCJleHAiOjE3NjU4MzA0NzN9.2ILR_jN6bn3tIrwrIS7IEcjs5Yd44G8MPksDrz6Oqas",
+            token: getToken(), // 👈 استخدام التوكن الديناميكي
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ count }),
@@ -69,6 +77,8 @@ export default function CartPage() {
       if (data.status === "success") {
         toast.success("Product updated successfully");
         setCartData(data);
+      } else {
+        toast.error("Failed to update product");
       }
     } catch (error) {
       toast.error("Failed to update product");
@@ -76,7 +86,7 @@ export default function CartPage() {
     setupdateId(null);
   }
 
-  //  حذف كل المنتجات (Clear Cart)
+  // 🧹 حذف كل المنتجات (Clear Cart)
   async function ClearCart() {
     setClearLoading(true);
     try {
@@ -85,8 +95,7 @@ export default function CartPage() {
         {
           method: "DELETE",
           headers: {
-            token:
-              "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4YzljODQ4MDM3YjQ5Nzk0NjlhNzdiNyIsIm5hbWUiOiJBaG1lZCBBYmQgQWwtTXV0aSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzU4MDU0NDczLCJleHAiOjE3NjU4MzA0NzN9.2ILR_jN6bn3tIrwrIS7IEcjs5Yd44G8MPksDrz6Oqas",
+            token: getToken(), // 👈 استخدام التوكن الديناميكي
           },
         }
       );
@@ -95,7 +104,7 @@ export default function CartPage() {
       if (data.message === "success") {
         toast.success("All products cleared successfully");
         setCartData({
-          numOfCartItems: 0, // 👈 علشان الرقم اللي فوق السلة يبقى 0
+          numOfCartItems: 0,
           data: { products: [], totalCartPrice: 0 },
         } as any);
       } else {
@@ -107,8 +116,23 @@ export default function CartPage() {
     setClearLoading(false);
   }
 
-  if (isLoading || !CartData || !CartData.data) {
+  if (isLoading) {
     return <Loading />;
+  }
+
+  if (!CartData || !CartData.data) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+        <div className="text-center text-gray-500 text-lg mb-4">
+          Your cart is empty or failed to load 🛒
+        </div>
+        <Link href={"/products"}>
+          <button className="px-6 py-3 rounded-xl bg-teal-600 text-white font-medium">
+            Start Shopping
+          </button>
+        </Link>
+      </div>
+    );
   }
 
   return (
@@ -130,7 +154,7 @@ export default function CartPage() {
           </p>
 
           {CartData.data.products.length === 0 ? (
-            <div className="text-center text-gray-400 text-lg">
+            <div className="text-center text-gray-400 text-lg py-12 bg-white rounded-2xl shadow-sm">
               Your cart is empty 🛒
             </div>
           ) : (
@@ -165,13 +189,13 @@ export default function CartPage() {
                         onClick={() =>
                           UpdateCartItem(product.product._id, product.count - 1)
                         }
-                        className="w-10 h-10 grid place-items-center text-lg"
+                        className="w-10 h-10 grid place-items-center text-lg hover:bg-gray-100 transition rounded-l-lg"
                       >
                         –
                       </button>
-                      <div className="w-12 text-center">
+                      <div className="w-12 text-center font-semibold">
                         {updateId === product.product._id ? (
-                          <Loader2 className="animate-spin mx-auto" />
+                          <Loader2 className="animate-spin mx-auto w-4 h-4" />
                         ) : (
                           product.count
                         )}
@@ -180,7 +204,7 @@ export default function CartPage() {
                         onClick={() =>
                           UpdateCartItem(product.product._id, product.count + 1)
                         }
-                        className="w-10 h-10 grid place-items-center text-lg"
+                        className="w-10 h-10 grid place-items-center text-lg hover:bg-gray-100 transition rounded-r-lg"
                       >
                         +
                       </button>
@@ -189,7 +213,7 @@ export default function CartPage() {
                     <button
                       disabled={removeId === product.product._id}
                       onClick={() => RemoveCartItem(product.product._id)}
-                      className="text-sm text-rose-600 hover:underline flex items-center gap-1"
+                      className="text-sm text-rose-600 hover:underline flex items-center gap-1 font-medium"
                     >
                       {removeId === product.product._id && (
                         <Loader2 className="animate-spin w-4 h-4" />
@@ -236,10 +260,11 @@ export default function CartPage() {
               {formatcurrint(CartData.data.totalCartPrice || 0)}
             </div>
           </div>
+          
           <Checkoutmohamed cartId={CartData?.cartId} />
 
           <Link href={"/products"}>
-            <button className="w-full py-3 mt-3 rounded-xl border border-gray-200 font-medium">
+            <button className="w-full py-3 mt-3 rounded-xl border border-gray-200 font-medium hover:bg-gray-50 transition">
               Continue Shopping
             </button>
           </Link>
