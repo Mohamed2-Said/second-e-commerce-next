@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Button } from "@/components/ui/button";
 import Navber from "@/components/Navber/Navber";
@@ -10,13 +10,7 @@ import Cartcontextprovider from "@/components/context/context";
 import RouteLoader from "@/components/GlabelLoading/RouteLoader";
 import Provider from "@/components/Provider/Provider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const inter = Inter({
   subsets: ["latin"],
 });
 
@@ -32,9 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${inter.className} antialiased`}>
         <Provider>{children}</Provider>
       </body>
     </html>
