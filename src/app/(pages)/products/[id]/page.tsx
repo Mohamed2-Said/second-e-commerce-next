@@ -1,5 +1,4 @@
 import { ProductsI } from "@/Inerface/product";
-import { Params } from "next/dist/server/request/params";
 import {
   Card,
   CardAction,
@@ -15,10 +14,17 @@ import { HeartIcon, ShoppingCartIcon } from "lucide-react";
 import Autoplay from "embla-carousel-autoplay";
 import ProductsSliders from "@/components/Slidercomp/ProductsSliders";
 import Addcart from "@/components/Addcart/Addcart";
-export default async function ProductsDetails({ params }: { params: Params }) {
+
+interface Props {
+  params: {
+    id: string;
+  };
+}
+
+export default async function ProductsDetails({ params }: Props) {
   let { id } = await params;
   const response = await fetch(
-    "https://ecommerce.routemisr.com/api/v1/products/" + id
+    "https://ecommerce.routemisr.com/api/v1/products/" + id,
   );
 
   const { data }: { data: ProductsI } = await response.json();
